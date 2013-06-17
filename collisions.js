@@ -1,7 +1,14 @@
 function Collider(options){
 	this._stepSize = typeof(options.stepSize == 'number') ? parseInt(options.stepSize) : 5;
 	this.numPlayers = 0; //this will need to be kept up to date
-	if(typeof(options.movementFunction != 'function')) console.log("ERROR: No movement function defined for Collider!");
+	if(typeof(options.movementFunction != 'function')){
+		this.movementFunction  = function(startPosition, endPosition, startPositionTime, endPositionTime, interpolationStep){
+			return{
+				'x': (startPosition.x + (endPosition.x - startPosition.x)) * (interpolationStep / (endPositionTime - startPositionTime)),
+				'y': (startPosition.y + (endPosition.y - startPosition.y)) * (interpolationStep / (endPositionTime - startPositionTime))
+			}
+		}
+	}
 	if(typeof(options.collisionFunction != 'function')) console.log("ERROR: No collision function defined for Collider!");
 	this._updateTable = {};
 
@@ -54,7 +61,7 @@ function Collider(options){
 		//
 		var collisions = [];
 		while(interpolationStep < currStep){
-			this._updateTable[interpolationStep].data[updateData.playerId] = movementFunction(this._updateTable[interpolationStep - this._stepSize], updateData, startStep, currStep, interpolationStep);
+			this._updateTable[interpolationStep].data[updateData.playerId] = movementFunction(this._updateTable[startStep], updateData, startStep, currStep, interpolationStep);
 			//do collision detection against all other existing players at that row
 			for(var otherPlayer in this._updateTable[interpolationStep].data){ //for each player in the row
 				if(otherPlayer != updateData.playerId){ //don't check the player against itself
@@ -71,7 +78,7 @@ function Collider(options){
 			}
 			this._updateTable[interpolationStep].num ++; //we have added some data to a row
 			//remove rows that are no longer necessary
-			if(this._updateTable[startStep].num == numPlayers && this._updateTable[startStep - this._stepSize] == numPlayers){
+			if(this._updateTable[startStep].num >= numPlayers && this._updateTable[startStep - this._stepSize] >= numPlayers){
 				delete this._updateTable[startStep - this._stepSize];
 			}
 			startStep += this._stepSize; //go to the next row
