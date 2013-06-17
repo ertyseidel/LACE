@@ -1,4 +1,4 @@
-function Collider(options){
+exports.Collider = function(options){
 	this._stepSize = typeof(options.stepSize == 'number') ? parseInt(options.stepSize) : 5;
 	this.numPlayers = 0; //this will need to be kept up to date
 	if(typeof(options.movementFunction != 'function')){
@@ -9,7 +9,7 @@ function Collider(options){
 			}
 		}
 	}
-	if(typeof(options.collisionFunction != 'function')) console.log("ERROR: No collision function defined for Collider!");
+	this.collisionFunction = options.collisionFunction;
 	this._updateTable = {};
 
 	/*
@@ -41,7 +41,6 @@ function Collider(options){
 		//create the steps up and including this one if they don't exist
 		var checkStep = currStep;
 		while(typeof(this._updateTable[checkStep]) == 'undefined' && checkStep >= - this._stepSize){
-			console.log("Creating row at " + checkStep);
 			this._updateTable[checkStep] = {num: 0, data: {}};
 			checkStep -= this._stepSize;
 		}
@@ -60,14 +59,15 @@ function Collider(options){
 		//as soon as we add each datum, check for collisions at that time
 		//
 		var collisions = [];
+		interpolationStep = startStep;
 		while(interpolationStep < currStep){
-			this._updateTable[interpolationStep].data[updateData.playerId] = movementFunction(this._updateTable[startStep], updateData, startStep, currStep, interpolationStep);
+			this._updateTable[interpolationStep].data[updateData.playerId] = this.movementFunction(this._updateTable[startStep], updateData, startStep, currStep, interpolationStep);
 			//do collision detection against all other existing players at that row
 			for(var otherPlayer in this._updateTable[interpolationStep].data){ //for each player in the row
 				if(otherPlayer != updateData.playerId){ //don't check the player against itself
 					var otherPlayerData = this._updateTable[interpolationStep].data[otherPlayer]; //create a temp variable
 					otherPlayerData.playerId = otherPlayer; //so that we can append the player's id datum
-					var collision = collisionFunction(updateData, otherPlayerData); //check for a collision. Collision data if there was, false otherwise
+					var collision = this.collisionFunction(updateData, otherPlayerData); //check for a collision. Collision data if there was, false otherwise
 					if(collision != false){ //if there is a collison
 						collisions.push({ 
 							'step' : interpolationStep,
@@ -78,10 +78,11 @@ function Collider(options){
 			}
 			this._updateTable[interpolationStep].num ++; //we have added some data to a row
 			//remove rows that are no longer necessary
-			if(this._updateTable[startStep].num >= numPlayers && this._updateTable[startStep - this._stepSize] >= numPlayers){
+			if(this._updateTable[startStep].num >= this.numPlayers && this._updateTable[startStep - this._stepSize] >= this.numPlayers){
 				delete this._updateTable[startStep - this._stepSize];
 			}
-			startStep += this._stepSize; //go to the next row
+			interpolationStep += this._stepSize; //go to the next row
 		}
+		return collisions;
 	}
 }
