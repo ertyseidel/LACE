@@ -13,7 +13,7 @@ collisionEngine.setInitialPositions({});
 collisionEngine.numPlayers = 0;
 
 //when we add a new player
-collisionEngine.numPlayers ++
+collisionEngine.numPlayers ++;
 
 // when we get an update from the user
 var collisions = collisionEngine.handleUpdate(getServerTime(), {
