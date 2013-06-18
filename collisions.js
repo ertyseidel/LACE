@@ -1,4 +1,5 @@
 exports.Collider = function(options){
+	this._firstStep = 0;
 	this._stepSize = typeof(options.stepSize == 'number') ? parseInt(options.stepSize) : 5;
 	this._numPlayers = 0;
 	if(typeof(options.movementFunction != 'function')){
@@ -13,16 +14,18 @@ exports.Collider = function(options){
 	this.collisionFunction = options.collisionFunction;
 	this._updateTable = {};
 
-	this.addPlayer = function(time){
+	//playerdata comes in with the form {playerId: <player id>, x: <player x>, y: <player y>}
+	this.addPlayer = function(time, playerData){
 		var currStep = time - (time % this._stepSize);
 		var checkStep = currStep;
 		if(this._numPlayers > 0){
-			while(typeof(this._updateTable[checkStep]) == 'undefined' && checkStep >= - this._stepSize){
-				this._updateTable[checkStep] = {num: 0, tot: this._numPlayers, data: {}};
+			while(typeof(this._updateTable[checkStep]) == 'undefined' && checkStep >= this._firstStep){
+				this._updateTable[checkStep] = {num: 1, tot: this._numPlayers + 1, data: {playerData.playerId: {'x': playerData.x, 'y': playerData.y}}};
 				checkStep -= this._stepSize;
 			}
 		} else{
-			this._updateTable[checkStep] = {num: 0, tot: this._numPlayers, data: {}};
+			this._updateTable[checkStep] = {num: 1, tot: 1, data: {playerData.playerId: {'x': playerData.x, 'y': playerData.y}}};
+			this._firstStep = checkStep;
 		}
 		this._numPlayers ++;
 	}
@@ -36,6 +39,10 @@ exports.Collider = function(options){
 				this._updateTable[checkStep].tot = this._numPlayers;
 			}
 		}
+		if(this._numPlayers == 0){
+			this._firstStep = 0;
+			this._updateTable = {};
+		}
 	}
 
 	/*
@@ -47,32 +54,37 @@ exports.Collider = function(options){
 	this.handleUpdate = function(time, updateData){
 		//figure out which step we're on		
 		var currStep = time - (time % this._stepSize);
-		//create the steps up and including this one if they don't exist
+		var beginStep = currStep;
 		var checkStep = currStep;
-		while(typeof(this._updateTable[checkStep]) == 'undefined' && checkStep >= - this._stepSize){
-			//num = number of players who have data in this row
-			//tot = total number of players in the game at this row time
-			this._updateTable[checkStep] = {num: 0, tot: this._numPlayers, data: {}};
-			checkStep -= this._stepSize;
+		//check to see if the player has already sent a packet this step
+		if(typeof(this._updateTable[currStep].data[updateData.playerId]) == 'undefined'){ //they haven't
+			//find the next previous row containing data from the current player
+			while(beginStep > this._firstStep && (typeof(this._updateTable[beginStep]) == 'undefined' || typeof(this._updateTable[beginStep].data[updateData.playerId]) == 'undefined')){
+				beginStep -= this._stepSize;
+			}
+			//create the steps up and including this one if they don't exist
+			while(typeof(this._updateTable[checkStep]) == 'undefined' && checkStep >= beginStep){
+				//num = number of players who have data in this row
+				//tot = total number of players in the game at this row time
+				this._updateTable[checkStep] = {num: 0, tot: this._numPlayers, data: {}};
+				checkStep -= this._stepSize;
+			}
 		}
 		//put the new data into the table at the correct step
 		this._updateTable[currStep].data[updateData.playerId] = {
 			'x': updateData.x,
 			'y': updateData.y
-		}
+		};
 		this._updateTable[currStep].num ++;
-		//find the next previous row containing data from the current player
-		var startStep = currStep - this._stepSize;
-		while(this._updateTable[checkStep].data[updateData.playerId] == 'undefined'){
-			startStep -= this._stepSize;
-		}
 		//step forward and fill all intermediate rows with interpolated data
 		//as soon as we add each datum, check for collisions at that time
-		//
 		var collisions = [];
-		interpolationStep = startStep;
-		while(interpolationStep < currStep){
-			this._updateTable[interpolationStep].data[updateData.playerId] = this.movementFunction(this._updateTable[startStep], updateData, startStep, currStep, interpolationStep);
+		interpolationStep = beginStep;
+		while(interpolationStep <= currStep){
+			if(interpolationStep != currStep && interpolationStep != beginStep){ // on every step except the first and last
+				this._updateTable[interpolationStep].data[updateData.playerId] = this.movementFunction(this._updateTable[beginStep], updateData, beginStep, currStep, interpolationStep);
+				this._updateTable[interpolationStep].num ++; //we have added some data to a row
+			}
 			//do collision detection against all other existing players at that row
 			for(var otherPlayer in this._updateTable[interpolationStep].data){ //for each player in the row
 				if(otherPlayer != updateData.playerId){ //don't check the player against itself
@@ -87,11 +99,11 @@ exports.Collider = function(options){
 					}
 				}
 			}
-			this._updateTable[interpolationStep].num ++; //we have added some data to a row
 			//remove rows that are no longer necessary
 			if(typeof(this._updateTable[interpolationStep - this._stepSize]) != 'undefined'){
-				if(this._updateTable[interpolationStep].num >= this._updateTable[interpolationStep].tot && this._updateTable[interpolationStep - this._stepSize].num >= this._updateTable[interpolationStep].tot){
+				if(this._updateTable[interpolationStep].num >= this._updateTable[interpolationStep].tot && this._updateTable[interpolationStep - this._stepSize].num >= this._updateTable[interpolationStep  - this._stepSize].tot){
 					delete this._updateTable[interpolationStep - this._stepSize];
+					this._firstStep = interpolationStep;
 				}
 			}
 			interpolationStep += this._stepSize; //go to the next row
