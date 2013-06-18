@@ -4,8 +4,8 @@ exports.Collider = function(options){
 	if(typeof(options.movementFunction != 'function')){
 		this.movementFunction  = function(startPosition, endPosition, startPositionTime, endPositionTime, interpolationStep){
 			return{
-				'x': (startPosition.x + (endPosition.x - startPosition.x)) * (interpolationStep / (endPositionTime - startPositionTime)),
-				'y': (startPosition.y + (endPosition.y - startPosition.y)) * (interpolationStep / (endPositionTime - startPositionTime))
+				'x': (endPosition.x - startPosition.x) * (interpolationStep / (endPositionTime + startPositionTime)),
+				'y': (endPosition.y - startPosition.y) * (interpolationStep / (endPositionTime + startPositionTime))
 			}
 		}
 	}
