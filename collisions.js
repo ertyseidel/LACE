@@ -20,11 +20,13 @@ exports.Collider = function(options){
 		var checkStep = currStep;
 		if(this._numPlayers > 0){
 			while(typeof(this._updateTable[checkStep]) == 'undefined' && checkStep >= this._firstStep){
-				this._updateTable[checkStep] = {num: 1, tot: this._numPlayers + 1, data: {playerData.playerId: {'x': playerData.x, 'y': playerData.y}}};
+				this._updateTable[checkStep] = {num: 1, tot: this._numPlayers + 1, data: {}};
+				this._updateTable[checkStep].data[playerData.playerId] = {'x': playerData.x, 'y': playerData.y};
 				checkStep -= this._stepSize;
 			}
 		} else{
-			this._updateTable[checkStep] = {num: 1, tot: 1, data: {playerData.playerId: {'x': playerData.x, 'y': playerData.y}}};
+			this._updateTable[checkStep] = {num: 1, tot: 1, data: {}};
+			this._updateTable[checkStep].data[playerData.playerId] = {'x': playerData.x, 'y': playerData.y};
 			this._firstStep = checkStep;
 		}
 		this._numPlayers ++;
@@ -57,7 +59,7 @@ exports.Collider = function(options){
 		var beginStep = currStep;
 		var checkStep = currStep;
 		//check to see if the player has already sent a packet this step
-		if(typeof(this._updateTable[currStep].data[updateData.playerId]) == 'undefined'){ //they haven't
+		if(typeof(this._updateTable[currStep]) == 'undefined' || (typeof(this._updateTable[currStep]) != 'undefined' && typeof(this._updateTable[currStep].data[updateData.playerId]) == 'undefined')){ //they haven't
 			//find the next previous row containing data from the current player
 			while(beginStep > this._firstStep && (typeof(this._updateTable[beginStep]) == 'undefined' || typeof(this._updateTable[beginStep].data[updateData.playerId]) == 'undefined')){
 				beginStep -= this._stepSize;
