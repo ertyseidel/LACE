@@ -4,13 +4,14 @@ exports.Collider = function(options){
 	this._numPlayers = 0;
 	if(typeof(options.movementFunction != 'function')){
 		this.movementFunction  = function(startPosition, endPosition, startPositionTime, endPositionTime, interpolationStep){
+			debugger;
 			return{
 				'x': (endPosition.x - startPosition.x) * (interpolationStep / (endPositionTime + startPositionTime)),
 				'y': (endPosition.y - startPosition.y) * (interpolationStep / (endPositionTime + startPositionTime))
 			}
 		}
 	}
-	if(typeof(options.collisionFunction != 'function')) console.log("ERROR: No collision function defined for Collider!");
+	if(typeof(options.collisionFunction) != 'function') console.log("ERROR: No collision function defined for Collider!");
 	this.collisionFunction = options.collisionFunction;
 	this._updateTable = {};
 
@@ -83,6 +84,8 @@ exports.Collider = function(options){
 				this._updateTable[checkStep] = {num: 0, tot: this._numPlayers, data: {}};
 				checkStep -= this._stepSize;
 			}
+		} else{ //they have
+			return []; //discard the data
 		}
 		//put the new data into the table at the correct step
 		this._updateTable[currStep].data[updateData.playerId] = {
@@ -96,7 +99,12 @@ exports.Collider = function(options){
 		interpolationStep = beginStep;
 		while(interpolationStep <= currStep){
 			if(interpolationStep != currStep && interpolationStep != beginStep){ // on every step except the first and last
-				this._updateTable[interpolationStep].data[updateData.playerId] = this.movementFunction(this._updateTable[beginStep], updateData, beginStep, currStep, interpolationStep);
+				var formattedData = {
+					"playerId": updateData.playerId,
+					"x": this._updateTable[beginStep].data[updateData.playerId].x,
+					"y": this._updateTable[beginStep].data[updateData.playerId].y
+				}
+				this._updateTable[interpolationStep].data[updateData.playerId] = this.movementFunction(formattedData, updateData, beginStep, currStep, interpolationStep);
 				this._updateTable[interpolationStep].num ++; //we have added some data to a row
 			}
 			//do collision detection against all other existing players at that row
@@ -123,7 +131,6 @@ exports.Collider = function(options){
 			}
 			interpolationStep += this._stepSize; //go to the next row
 		}
-		console.log("Array Length: " + Object.keys(this._updateTable).length);
 		return collisions;
 	}
 }

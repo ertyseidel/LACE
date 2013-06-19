@@ -1,5 +1,5 @@
 // in server file
-
+/*
 var collisionEngine = new collisions({
 	stepSize: 50,
 	//collisionFunction(playerOneData, playerTwoData); 
@@ -20,4 +20,4 @@ var collisions = collisionEngine.handleUpdate(getServerTime(), {
 	'playerId': givenID,
 	'x': parseFloat(player.x),
 	'y': parseFloat(player.y)
-});
+});*/
