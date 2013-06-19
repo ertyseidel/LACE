@@ -33,6 +33,7 @@ exports.Collider = function(options){
 	}
 
 	this.removePlayer = function(time, playerId){
+		debugger;
 		this._numPlayers --;
 		var currStep = time - (time % this._stepSize);
 		var checkStep = currStep;
@@ -40,10 +41,20 @@ exports.Collider = function(options){
 			if(typeof(this._updateTable[checkStep]) != 'undefined'){ //if the row exists
 				this._updateTable[checkStep].tot = this._numPlayers;
 			}
+			checkStep -= this._stepSize;
 		}
 		if(this._numPlayers == 0){
 			this._firstStep = 0;
 			this._updateTable = {};
+			return;
+		}
+		var checkStep = this._firstStep;
+		while(checkStep < currStep){
+			if(this._updateTable[checkStep].num >= this._updateTable[checkStep].tot && typeof(this._updateTable[checkStep - this._stepSize]) != 'undefined' && this._updateTable[checkStep - this._stepSize].num >= this._updateTable[checkStep  - this._stepSize].tot){
+				delete this._updateTable[checkStep - this._stepSize];
+				this._firstStep = checkStep;
+			}
+			checkStep += this._stepSize;
 		}
 	}
 
@@ -106,6 +117,7 @@ exports.Collider = function(options){
 				if(this._updateTable[interpolationStep].num >= this._updateTable[interpolationStep].tot && this._updateTable[interpolationStep - this._stepSize].num >= this._updateTable[interpolationStep  - this._stepSize].tot){
 					delete this._updateTable[interpolationStep - this._stepSize];
 					this._firstStep = interpolationStep;
+					beginStep = interpolationStep;
 				}
 			}
 			interpolationStep += this._stepSize; //go to the next row
