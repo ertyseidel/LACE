@@ -5,8 +5,8 @@ exports.Collider = function(options){
 	if(typeof(options.movementFunction != 'function')){
 		this.movementFunction  = function(startPosition, endPosition, startPositionTime, endPositionTime, interpolationStep){
 			return{
-				'x': ((endPosition.x - startPosition.x)/(endPositionTime - startPositionTime)) * interpolationStep,
-				'y': ((endPosition.y - startPosition.y)/(endPositionTime - startPositionTime)) * interpolationStep
+				'x': (endPosition.x - startPosition.x) * (interpolationStep / (endPositionTime + startPositionTime)),
+				'y': (endPosition.y - startPosition.y) * (interpolationStep / (endPositionTime + startPositionTime))
 			}
 		}
 	}
@@ -33,7 +33,6 @@ exports.Collider = function(options){
 	}
 
 	this.removePlayer = function(time, playerId){
-		debugger;
 		this._numPlayers --;
 		var currStep = time - (time % this._stepSize);
 		var checkStep = currStep;
@@ -43,13 +42,15 @@ exports.Collider = function(options){
 			}
 			checkStep -= this._stepSize;
 		}
+		//if there are no players, just reset the game and return
 		if(this._numPlayers == 0){
 			this._firstStep = 0;
 			this._updateTable = {};
 			return;
 		}
+		//Otherwise, step forward through the entire table and remove now-full rows
 		var checkStep = this._firstStep;
-		while(checkStep < currStep){
+		while(checkStep < currStep && typeof(this._updateTable[checkStep]) != 'undefined'){
 			if(this._updateTable[checkStep].num >= this._updateTable[checkStep].tot && typeof(this._updateTable[checkStep - this._stepSize]) != 'undefined' && this._updateTable[checkStep - this._stepSize].num >= this._updateTable[checkStep  - this._stepSize].tot){
 				delete this._updateTable[checkStep - this._stepSize];
 				this._firstStep = checkStep;
