@@ -5,8 +5,8 @@ exports.Collider = function(options){
 	if(typeof(options.movementFunction != 'function')){
 		this.movementFunction  = function(startPosition, endPosition, startPositionTime, endPositionTime, interpolationStep){
 			return{
-				'x': (endPosition.x - startPosition.x) * (interpolationStep / (endPositionTime + startPositionTime)),
-				'y': (endPosition.y - startPosition.y) * (interpolationStep / (endPositionTime + startPositionTime))
+				'x': ((endPosition.x - startPosition.x)/(endPositionTime - startPositionTime)) * interpolationStep,
+				'y': ((endPosition.y - startPosition.y)/(endPositionTime - startPositionTime)) * interpolationStep
 			}
 		}
 	}
@@ -122,6 +122,7 @@ exports.Collider = function(options){
 			}
 			interpolationStep += this._stepSize; //go to the next row
 		}
+		console.log("Array Length: " + Object.keys(this._updateTable).length);
 		return collisions;
 	}
 }
