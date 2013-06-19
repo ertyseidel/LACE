@@ -101,7 +101,7 @@ exports.Collider = function(options){
 			if(interpolationStep != currStep && interpolationStep != beginStep){ // on every step except the first and last
 				var formattedData = {
 					"playerId": updateData.playerId,
-					"x": this._updateTable[beginStep].data[updateData.playerId].x,
+					"x": this._updateTable[beginStep].data[updateData.playerId].x, //this breaks sometimes...
 					"y": this._updateTable[beginStep].data[updateData.playerId].y
 				}
 				this._updateTable[interpolationStep].data[updateData.playerId] = this.movementFunction(formattedData, updateData, beginStep, currStep, interpolationStep);
