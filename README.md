@@ -28,6 +28,7 @@ Recieve updates from G every other "frame"
     [BG][][G][][G][][G]
 
 Recieve another update from B:
+
     [BG][][G][][G][][G][B]
 
 Backfill interpolated data between the two points and check for past collisions
